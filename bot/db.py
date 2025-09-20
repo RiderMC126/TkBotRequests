@@ -27,7 +27,7 @@ def init_db():
         )
         """)
 
-        # Таблица пользователей (для админки/логов)
+        # Таблица пользователей
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
