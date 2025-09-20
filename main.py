@@ -10,7 +10,6 @@ from bot.db import *
 from bot.keyboards import *
 from bot.main import bot as tg_bot, dp
 
-# ------------------ Tkinter GUI ------------------
 class AdminGUI:
     def __init__(self, root, bot):
         self.bot = bot
@@ -22,7 +21,6 @@ class AdminGUI:
         main_frame = tk.Frame(root, padx=10, pady=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Левая часть - список заявок
         left_frame = tk.Frame(main_frame)
         left_frame.pack(side=tk.LEFT, fill=tk.Y)
 
@@ -35,7 +33,6 @@ class AdminGUI:
         scrollbar.pack(side=tk.LEFT, fill=tk.Y)
         self.requests_listbox.config(yscrollcommand=scrollbar.set)
 
-        # Правая часть - текст заявки и ответ
         right_frame = tk.Frame(main_frame)
         right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
@@ -55,9 +52,8 @@ class AdminGUI:
         self.send_button.pack(fill=tk.X)
 
         self.load_requests()
-        self.auto_update_requests()  # авто-обновление списка заявок
+        self.auto_update_requests() 
 
-    # ------------------ Загрузка заявок ------------------
     def load_requests(self):
         self.requests_listbox.delete(0, tk.END)
         self.requests = get_requests()
@@ -77,7 +73,6 @@ class AdminGUI:
             self.comment_text.insert(tk.END, req[3])
             self.comment_text.config(state='disabled')
 
-    # ------------------ Отправка ответа ------------------
     def send_answer(self):
         if not hasattr(self, 'selected_request'):
             messagebox.showwarning("Выберите заявку", "Сначала выберите заявку из списка")
@@ -89,7 +84,6 @@ class AdminGUI:
 
         request_id, user_id = self.selected_request[0], self.selected_request[1]
 
-        # Отправка сообщения через loop бота
         asyncio.run_coroutine_threadsafe(self.send_message(user_id, answer), bot_loop)
 
         answer_request(request_id, answer)
@@ -103,12 +97,10 @@ class AdminGUI:
         except Exception as e:
             messagebox.showerror("Ошибка отправки", f"Не удалось отправить сообщение: {e}")
 
-    # ------------------ Авто-обновление ------------------
     def auto_update_requests(self):
         self.load_requests()
-        self.root.after(3000, self.auto_update_requests)  # каждые 3 секунды
+        self.root.after(3000, self.auto_update_requests) 
 
-# ------------------ Запуск бота в отдельном потоке ------------------
 def start_bot():
     global bot_loop
     bot_loop = asyncio.new_event_loop()
@@ -120,7 +112,6 @@ if __name__ == "__main__":
     # Запуск бота
     bot_thread = threading.Thread(target=start_bot, daemon=True)
     bot_thread.start()
-
     # Запуск Tkinter 
     root = tk.Tk()
     app = AdminGUI(root, tg_bot)

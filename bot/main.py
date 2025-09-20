@@ -17,7 +17,6 @@ from bot.config import *
 from bot.keyboards import *
 from bot.db import *
 
-
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
 storage = MemoryStorage()
@@ -26,10 +25,8 @@ router = Router()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
 class Form(StatesGroup):
     ticket = State()
-
 
 @dp.message(Command("start"))
 async def start(message: Message):
