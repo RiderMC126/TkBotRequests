@@ -15,11 +15,9 @@ class AdminGUI:
         root.geometry("800x500")
         root.resizable(False, False)
 
-        # Основной фрейм
         main_frame = tk.Frame(root, padx=10, pady=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Левая часть — список заявок
         left_frame = tk.Frame(main_frame)
         left_frame.pack(side=tk.LEFT, fill=tk.Y)
 
@@ -32,25 +30,20 @@ class AdminGUI:
         scrollbar.pack(side=tk.LEFT, fill=tk.Y)
         self.requests_listbox.config(yscrollcommand=scrollbar.set)
 
-        # Правая часть — текст заявки и ответ
         right_frame = tk.Frame(main_frame)
         right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
-        # Текст заявки
         tk.Label(right_frame, text="Текст заявки:", font=("Arial", 12, "bold")).pack(anchor="w")
         self.comment_text = scrolledtext.ScrolledText(right_frame, height=10, font=("Arial", 10), state='disabled', wrap=tk.WORD)
         self.comment_text.pack(fill=tk.BOTH, pady=(0,10))
 
-        # Текст ответа
         tk.Label(right_frame, text="Ответ пользователю:", font=("Arial", 12, "bold")).pack(anchor="w")
         self.answer_text = scrolledtext.ScrolledText(right_frame, height=8, font=("Arial", 10), wrap=tk.WORD)
         self.answer_text.pack(fill=tk.BOTH, pady=(0,10))
 
-        # Кнопка отправки
         self.send_button = tk.Button(right_frame, text="Отправить ответ", font=("Arial", 12, "bold"), bg="#4CAF50", fg="white", command=self.send_answer)
         self.send_button.pack(fill=tk.X)
 
-        # Загружаем заявки
         self.load_requests()
 
     def load_requests(self):
@@ -94,7 +87,7 @@ class AdminGUI:
         except Exception as e:
             messagebox.showerror("Ошибка отправки", f"Не удалось отправить сообщение: {e}")
 
-# ------------------ Запуск ------------------
+
 if __name__ == "__main__":
     bot = Bot(token=TOKEN)
     root = tk.Tk()
