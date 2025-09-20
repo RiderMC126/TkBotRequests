@@ -2,9 +2,11 @@ import tkinter as tk
 from tkinter import messagebox, scrolledtext
 import sqlite3
 import asyncio
+import threading
 from aiogram import Bot
 from bot.config import *
 from bot.db import *
+from bot.main import bot, dp
 
 
 class AdminGUI:
@@ -88,8 +90,17 @@ class AdminGUI:
             messagebox.showerror("Ошибка отправки", f"Не удалось отправить сообщение: {e}")
 
 
+def start_bot():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    init_db()
+    loop.run_until_complete(dp.start_polling(bot))
+
 if __name__ == "__main__":
-    bot = Bot(token=TOKEN)
+    # Запуск бота 
+    bot_thread = threading.Thread(target=start_bot, daemon=True)
+    bot_thread.start()
+    # Запуск Tkinter
     root = tk.Tk()
     app = AdminGUI(root, bot)
     root.mainloop()

@@ -13,9 +13,9 @@ import sqlite3
 import asyncio
 import logging
 import sys
-from config import *
-from keyboards import *
-from db import *
+from bot.config import *
+from bot.keyboards import *
+from bot.db import *
 
 
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
