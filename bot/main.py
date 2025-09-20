@@ -15,11 +15,13 @@ import logging
 import sys
 from config import *
 from keyboards import *
+from db import *
 
 
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
 storage = MemoryStorage()
+dp.fsm_storage = storage
 router = Router()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -29,29 +31,35 @@ class Form(StatesGroup):
     ticket = State()
 
 
-@dp.message(Command('start'))
-async def start(message: types.Message):
-    await bot.send_message(message.chat.id, text=f"Здравствуйте, который примет от вас заявку и отправит её Администратору.", reply_markup=keyboard_start())
-
+@dp.message(Command("start"))
+async def start(message: Message):
+    add_user(message)  # добавляем пользователя в базу
+    await bot.send_message(
+        message.chat.id,
+        text="Здравствуйте! Я приму от вас заявку и отправлю её Администратору.",
+        reply_markup=keyboard_start()
+    )
 
 @dp.message(F.text == "Отправить заявку")
-async def sentRequest(message: types.Message, state: FSMContext):
-    await bot.send_message(message.chat.id, text="Введите текст для заявки: ")
+async def sent_request(message: Message, state: FSMContext):
+    await bot.send_message(message.chat.id, text="Введите текст для заявки:")
     await state.set_state(Form.ticket)
 
-@router.message(Form.ticket)
+@dp.message(Form.ticket)
 async def handle_ticket(message: Message, state: FSMContext):
     await state.update_data(ticket=message.text)
     data = await state.get_data()
-    ###
+    add_request(message, data['ticket'])
+    await bot.send_message(message.chat.id, text="Ваша заявка принята! Администратор скоро с вами свяжется.")
     await state.clear()
     
 
 
 async def main() -> None:
-    bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    dp.include_router(router)
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    init_db()
     asyncio.run(main())
