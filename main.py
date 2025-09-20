@@ -3,8 +3,8 @@ from tkinter import messagebox, scrolledtext
 import sqlite3
 import asyncio
 from aiogram import Bot
-from .bot.config import *
-from .bot.db import *
+from bot.config import *
+from bot.db import *
 
 
 class AdminGUI:
@@ -12,34 +12,53 @@ class AdminGUI:
         self.bot = bot
         self.root = root
         root.title("Админка - Заявки Telegram")
-        root.geometry("600x400")
+        root.geometry("800x500")
+        root.resizable(False, False)
 
-        # Список заявок
-        self.requests_listbox = tk.Listbox(root, width=80)
-        self.requests_listbox.pack(pady=10)
+        # Основной фрейм
+        main_frame = tk.Frame(root, padx=10, pady=10)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Левая часть — список заявок
+        left_frame = tk.Frame(main_frame)
+        left_frame.pack(side=tk.LEFT, fill=tk.Y)
+
+        tk.Label(left_frame, text="Список заявок:", font=("Arial", 12, "bold")).pack(anchor="w")
+        self.requests_listbox = tk.Listbox(left_frame, width=40, height=25, font=("Arial", 10))
+        self.requests_listbox.pack(side=tk.LEFT, fill=tk.Y, padx=(0,5))
         self.requests_listbox.bind("<<ListboxSelect>>", self.load_request)
 
-        # Поле для текста заявки
-        tk.Label(root, text="Текст заявки:").pack()
-        self.comment_text = scrolledtext.ScrolledText(root, height=5, width=70, state='disabled')
-        self.comment_text.pack()
+        scrollbar = tk.Scrollbar(left_frame, command=self.requests_listbox.yview)
+        scrollbar.pack(side=tk.LEFT, fill=tk.Y)
+        self.requests_listbox.config(yscrollcommand=scrollbar.set)
 
-        # Поле для ответа
-        tk.Label(root, text="Ответ пользователю:").pack()
-        self.answer_text = scrolledtext.ScrolledText(root, height=5, width=70)
-        self.answer_text.pack()
+        # Правая часть — текст заявки и ответ
+        right_frame = tk.Frame(main_frame)
+        right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+
+        # Текст заявки
+        tk.Label(right_frame, text="Текст заявки:", font=("Arial", 12, "bold")).pack(anchor="w")
+        self.comment_text = scrolledtext.ScrolledText(right_frame, height=10, font=("Arial", 10), state='disabled', wrap=tk.WORD)
+        self.comment_text.pack(fill=tk.BOTH, pady=(0,10))
+
+        # Текст ответа
+        tk.Label(right_frame, text="Ответ пользователю:", font=("Arial", 12, "bold")).pack(anchor="w")
+        self.answer_text = scrolledtext.ScrolledText(right_frame, height=8, font=("Arial", 10), wrap=tk.WORD)
+        self.answer_text.pack(fill=tk.BOTH, pady=(0,10))
 
         # Кнопка отправки
-        self.send_button = tk.Button(root, text="Отправить ответ", command=self.send_answer)
-        self.send_button.pack(pady=10)
+        self.send_button = tk.Button(right_frame, text="Отправить ответ", font=("Arial", 12, "bold"), bg="#4CAF50", fg="white", command=self.send_answer)
+        self.send_button.pack(fill=tk.X)
 
+        # Загружаем заявки
         self.load_requests()
 
     def load_requests(self):
         self.requests_listbox.delete(0, tk.END)
         self.requests = get_requests()
         for req in self.requests:
-            display_text = f"{req[0]} | @{req[2]} | {req[3][:30]}..." if req[2] else f"{req[0]} | {req[3][:30]}..."
+            display_text = f"{req[0]} | @{req[2]}" if req[2] else f"{req[0]}"
+            display_text += f" | {req[3][:30]}..."
             self.requests_listbox.insert(tk.END, display_text)
 
     def load_request(self, event):
@@ -65,16 +84,15 @@ class AdminGUI:
         request_id, user_id = self.selected_request[0], self.selected_request[1]
         asyncio.run(self.send_message(user_id, answer))
         answer_request(request_id, answer)
-        messagebox.showinfo("Успех", "Ответ отправлен и заявка помечена как отвечённая")
+        messagebox.showinfo("Успех", "Ответ отправлен и заявка помечена как отвеченная")
         self.answer_text.delete("1.0", tk.END)
         self.load_requests()
 
     async def send_message(self, user_id, text):
         try:
-            await self.bot.send_message(user_id, text)
+            await self.bot.send_message(user_id, f"Ответ от Администрации:\n{text}")
         except Exception as e:
             messagebox.showerror("Ошибка отправки", f"Не удалось отправить сообщение: {e}")
-
 
 # ------------------ Запуск ------------------
 if __name__ == "__main__":
