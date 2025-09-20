@@ -3,12 +3,14 @@ from tkinter import messagebox, scrolledtext
 import sqlite3
 import asyncio
 import threading
+import logging
 from aiogram import Bot
 from bot.config import *
 from bot.db import *
-from bot.main import bot, dp
+from bot.keyboards import *
+from bot.main import bot as tg_bot, dp
 
-
+# ------------------ Tkinter GUI ------------------
 class AdminGUI:
     def __init__(self, root, bot):
         self.bot = bot
@@ -20,6 +22,7 @@ class AdminGUI:
         main_frame = tk.Frame(root, padx=10, pady=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
+        # Левая часть - список заявок
         left_frame = tk.Frame(main_frame)
         left_frame.pack(side=tk.LEFT, fill=tk.Y)
 
@@ -32,6 +35,7 @@ class AdminGUI:
         scrollbar.pack(side=tk.LEFT, fill=tk.Y)
         self.requests_listbox.config(yscrollcommand=scrollbar.set)
 
+        # Правая часть - текст заявки и ответ
         right_frame = tk.Frame(main_frame)
         right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
@@ -43,11 +47,17 @@ class AdminGUI:
         self.answer_text = scrolledtext.ScrolledText(right_frame, height=8, font=("Arial", 10), wrap=tk.WORD)
         self.answer_text.pack(fill=tk.BOTH, pady=(0,10))
 
-        self.send_button = tk.Button(right_frame, text="Отправить ответ", font=("Arial", 12, "bold"), bg="#4CAF50", fg="white", command=self.send_answer)
+        self.send_button = tk.Button(
+            right_frame, text="Отправить ответ",
+            font=("Arial", 12, "bold"), bg="#4CAF50", fg="white",
+            command=self.send_answer
+        )
         self.send_button.pack(fill=tk.X)
 
         self.load_requests()
+        self.auto_update_requests()  # авто-обновление списка заявок
 
+    # ------------------ Загрузка заявок ------------------
     def load_requests(self):
         self.requests_listbox.delete(0, tk.END)
         self.requests = get_requests()
@@ -67,6 +77,7 @@ class AdminGUI:
             self.comment_text.insert(tk.END, req[3])
             self.comment_text.config(state='disabled')
 
+    # ------------------ Отправка ответа ------------------
     def send_answer(self):
         if not hasattr(self, 'selected_request'):
             messagebox.showwarning("Выберите заявку", "Сначала выберите заявку из списка")
@@ -77,9 +88,12 @@ class AdminGUI:
             return
 
         request_id, user_id = self.selected_request[0], self.selected_request[1]
-        asyncio.run(self.send_message(user_id, answer))
+
+        # Отправка сообщения через loop бота
+        asyncio.run_coroutine_threadsafe(self.send_message(user_id, answer), bot_loop)
+
         answer_request(request_id, answer)
-        messagebox.showinfo("Успех", "Ответ отправлен и заявка помечена как отвеченная")
+        messagebox.showinfo("Успех", "Ответ отправлен и заявка помечена как отвечённая")
         self.answer_text.delete("1.0", tk.END)
         self.load_requests()
 
@@ -89,18 +103,25 @@ class AdminGUI:
         except Exception as e:
             messagebox.showerror("Ошибка отправки", f"Не удалось отправить сообщение: {e}")
 
+    # ------------------ Авто-обновление ------------------
+    def auto_update_requests(self):
+        self.load_requests()
+        self.root.after(3000, self.auto_update_requests)  # каждые 3 секунды
 
+# ------------------ Запуск бота в отдельном потоке ------------------
 def start_bot():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    global bot_loop
+    bot_loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(bot_loop)
     init_db()
-    loop.run_until_complete(dp.start_polling(bot))
+    bot_loop.run_until_complete(dp.start_polling(tg_bot))
 
 if __name__ == "__main__":
-    # Запуск бота 
+    # Запуск бота
     bot_thread = threading.Thread(target=start_bot, daemon=True)
     bot_thread.start()
-    # Запуск Tkinter
+
+    # Запуск Tkinter 
     root = tk.Tk()
-    app = AdminGUI(root, bot)
+    app = AdminGUI(root, tg_bot)
     root.mainloop()

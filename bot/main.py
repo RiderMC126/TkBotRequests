@@ -33,7 +33,7 @@ class Form(StatesGroup):
 
 @dp.message(Command("start"))
 async def start(message: Message):
-    add_user(message)  # добавляем пользователя в базу
+    add_user(message) 
     await bot.send_message(
         message.chat.id,
         text="Здравствуйте! Я приму от вас заявку и отправлю её Администратору.",
@@ -53,7 +53,6 @@ async def handle_ticket(message: Message, state: FSMContext):
     await bot.send_message(message.chat.id, text="Ваша заявка принята! Администратор скоро с вами свяжется.")
     await state.clear()
     
-
 
 async def main() -> None:
     dp.include_router(router)
